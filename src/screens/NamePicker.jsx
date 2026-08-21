@@ -2,28 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { api } from '../api';
 import { STORAGE_KEY_USER } from '../config';
-import { Users, User, AlertCircle, RefreshCw } from 'lucide-react';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 18, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: 'spring', stiffness: 350, damping: 25 },
-  },
-};
+import { Users, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function NamePicker({ onPick }) {
   const [users, setUsers] = useState([]);
@@ -33,10 +12,31 @@ export default function NamePicker({ onPick }) {
   function loadUsers() {
     setLoading(true);
     setError('');
+
     api
       .listUsersWithRoles()
-      .then(setUsers)
-      .catch((err) => setError(err.message))
+      .then((data) => {
+        // Atajamos si el backend de Google devuelve un error estructurado
+        if (data && data.ok === false) {
+          setError(data.error || 'Error del servidor en Google Sheets.');
+          setUsers([]);
+          return;
+        }
+
+        // Si es la lista esperada, la guardamos. Si no, protegemos el .map()
+        if (Array.isArray(data)) {
+          setUsers(data);
+        } else {
+          console.error("Respuesta inválida del servidor:", data);
+          setError('El servidor no devolvió una lista de usuarios válida.');
+          setUsers([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error de conexión:", err);
+        setError(err.message || 'Error de red al conectar con el servidor.');
+        setUsers([]);
+      })
       .finally(() => setLoading(false));
   }
 
@@ -65,27 +65,26 @@ export default function NamePicker({ onPick }) {
         >
           <Users size={28} />
         </motion.div>
-        <h1 className="picker-title">¿Quién sos?</h1>
-        <p className="picker-subtitle">
-          Seleccioná tu usuario para registrar tus cambios en la planilla remota.
-        </p>
+
+        <h2>¿Quién sos?</h2>
+        <p className="text-muted">Selecciona tu usuario para ingresar al sistema</p>
 
         {loading && (
-          <div className="skeleton-container" style={{ margin: '0 auto' }}>
-            <div className="skeleton-item" />
-            <div className="skeleton-item" />
-            <div className="skeleton-item" />
+          <div className="loading-state" style={{ margin: '20px 0', textAlign: 'center' }}>
+            <div className="spinner" style={{ margin: '0 auto 10px' }} />
+            <span>Cargando lista de usuarios…</span>
           </div>
         )}
 
+        {/* TU BANNER DE ERROR CON BOTÓN REINTENTAR */}
         {error && (
           <motion.div
             className="error-banner"
-            style={{ textAlign: 'left' }}
+            style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', textAlign: 'left', marginTop: '16px' }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <AlertCircle size={20} style={{ flexShrink: 0 }} />
+            <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
             <div>
               <strong>Error de conexión</strong>
               <div style={{ fontSize: '13px', marginTop: '2px' }}>{error}</div>
@@ -96,52 +95,37 @@ export default function NamePicker({ onPick }) {
                 style={{ marginTop: '10px', padding: '6px 12px', fontSize: '13px' }}
                 onClick={loadUsers}
               >
-                <RefreshCw size={14} /> Reintentar
+                <RefreshCw size={14} style={{ marginRight: '6px' }} /> Reintentar
               </motion.button>
             </div>
           </motion.div>
         )}
 
-        {!loading && !error && (
-          <motion.div
-            className="picker-grid"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {users.map((u) => {
-              const name = typeof u === 'string' ? u : u.name;
-
-              return (
-                <motion.button
-                  key={name}
-                  className="picker-btn"
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => choose(name)}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div className="avatar-badge" style={{ width: '38px', height: '38px' }}>
-                      <User size={20} />
-                    </div>
-                    <span style={{ fontWeight: 600 }}>{name}</span>
-                  </div>
-                </motion.button>
-              );
-            })}
-          </motion.div>
+        {/* LISTADO DE USUARIOS EVITANDO PANTALLA EN BLANCO */}
+        {!loading && !error && users.length > 0 && (
+          <div className="users-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {users.map((u) => (
+              <button
+                key={u.name}
+                className="btn-user-select"
+                onClick={() => choose(u.name)}
+                style={{ padding: '12px', textAlign: 'left', cursor: 'pointer' }}
+              >
+                <strong>{u.name}</strong>
+                <span style={{ fontSize: '12px', display: 'block', opacity: 0.7 }}>
+                  Rol: {u.role}
+                </span>
+              </button>
+            ))}
+          </div>
         )}
 
         {!loading && !error && users.length === 0 && (
-          <div className="error-banner">
-            <AlertCircle size={18} />
-            <span>No se encontraron usuarios cargados en la pestaña "Usuarios".</span>
-          </div>
+          <p className="text-muted" style={{ marginTop: '20px', textAlign: 'center' }}>
+            No se encontraron usuarios registrados en la planilla.
+          </p>
         )}
       </motion.div>
     </div>
   );
 }
-

@@ -44,26 +44,35 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!user) {
       setUserRole(null);
       setRoleLoading(false);
       return;
     }
     setRoleLoading(true);
-    api.getUserRole(user)
-      .then((res) => {
-        setUserRole(res.rol || 'usuario');
+
+    fetch(BACKEND_URL_ROLES, {
+      method: "POST",
+      body: JSON.stringify({
+        accion: "obtenerRol",
+        correo: user,
+        token: API_TOKEN
+      })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setUserRole(data.rol ? data.rol.toLowerCase().trim() : 'usuario');
       })
       .catch((err) => {
-        console.warn('Error al verificar rol del usuario:', err);
+        console.warn('Error al verificar rol seguro:', err);
         setUserRole('usuario');
       })
       .finally(() => {
         setRoleLoading(false);
       });
-  }, [user]);
-
+  }, [user]); 
+  
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('app-theme');
     if (saved) return saved;

@@ -1,13 +1,13 @@
 // Configuración de conexión al backend (Apps Script).
-// Esto NO lo pone el usuario final -- va fijo en la app, es la misma
-// URL y token que ya probaste con el test-client.html.
-//
-// TODO Jorge: pegá acá tu URL y token reales antes de correr la app.
-export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  'https://script.google.com/macros/s/AKfycbzT6yAQTQa_bEww3UZMAPsdO9tvjbB5LqWpUuspC7tBNwLuNsiezoYtfvE3VQtTZye5/exec';
-export const API_TOKEN = import.meta.env.VITE_API_TOKEN || 'Jorgemanuel22';
-export const BACKEND_URL_ROLES = 'https://script.google.com/macros/s/AKfycbz-8-XkCYSWrviYcG0U0hJUlPNRK_CFJNhToBXGSlfZ9H8RlSSu-s4nCOmm7Te5LETy/exec';
-// Nombre de la clave que usamos en localStorage para guardar el nombre
-// de usuario elegido la primera vez (queda "fijo" desde ese momento).
+// 🌟 PEGA TU URL REAL DE GOOGLE EN LA SIGUIENTE LÍNEA:
+const URL_UNIFICADA = 'https://script.google.com/macros/s/AKfycbyvWlRM2EC50bEEqAZ-ONjQZn8BMdQwxPSk3Kgym9OHU-x_BRrbbdn-6vBqIBCYkOMZ/exec';
+
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || URL_UNIFICADA;
+
+// Apuntamos la variable de roles a la misma URL para que use el backend moderno
+export const BACKEND_URL_ROLES = URL_UNIFICADA;
+
+export const API_TOKEN = import.meta.env.VITE_API_TOKEN || 'JorgeManuel22';
+
+// Nombre de la clave en localStorage
 export const STORAGE_KEY_USER = 'sheets-remote:user';
